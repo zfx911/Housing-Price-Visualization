@@ -1,0 +1,820 @@
+---
+title: "ANLY503 Project"
+format: 
+    html:
+        page-layout: full
+        embed-resources: true
+        code-fold: true
+author:
+- zifeng xu
+date: "2023-4-12"
+---
+
+```{python}
+# | echo: false
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+import plotly.io as pio
+import altair as alt
+
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+```
+
+
+## .Intrinsic factors that affect the housing price
+
+```{python}
+df1=pd.read_csv("../data/Housing.csv")
+df1=df1.drop(columns=['hotwaterheating', 'prefarea'])
+# df1.head()
+```
+
+```{python}
+df1_area=df1[["price","area"]].groupby(["area"]).mean().reset_index()
+
+df1_bed=df1[["price","bedrooms"]].groupby(["bedrooms"]).mean().reset_index()
+
+df1_bath=df1[["price","bathrooms"]].groupby(["bathrooms"]).mean().reset_index()
+
+df1_stories=df1[["price","stories"]].groupby(["stories"]).mean().reset_index()
+
+df1_mainroad=df1[["price","mainroad"]].groupby(["mainroad"]).mean().reset_index()
+
+df1_guestroom=df1[["price","guestroom"]].groupby(["guestroom"]).mean().reset_index()
+
+df1_basement=df1[["price","basement"]].groupby(["basement"]).mean().reset_index()
+
+df1_air=df1[["price","airconditioning"]].groupby(["airconditioning"]).mean().reset_index()
+
+df1_parking=df1[["price","parking"]].groupby(["parking"]).mean().reset_index()
+
+df1_fur=df1[["price","furnishingstatus"]].groupby(["furnishingstatus"]).mean().reset_index()
+```
+
+### Method 
+Firstly, use the box plot to show the distribution of the housing price for different level of each factors. 
+
+```{python}
+plt.figure(figsize=(11, 10))
+plt.subplot(3,3,1)
+sns.boxplot(x = 'bedrooms', y = 'price', data = df1)
+
+plt.subplot(3,3,2)
+sns.boxplot(x = 'bathrooms', y = 'price', data = df1)
+
+plt.subplot(3,3,3)
+sns.boxplot(x = 'stories', y = 'price', data = df1)
+
+plt.subplot(3,3,4)
+sns.boxplot(x = 'mainroad', y = 'price', data = df1)
+
+plt.subplot(3,3,5)
+sns.boxplot(x = 'guestroom', y = 'price', data = df1)
+
+plt.subplot(3,3,6)
+sns.boxplot(x = 'basement', y = 'price', data = df1)
+
+
+plt.subplot(3,3,7)
+sns.boxplot(x = 'airconditioning', y = 'price', data = df1)
+
+plt.subplot(3,3,8)
+sns.boxplot(x = 'parking', y = 'price', data = df1)
+
+plt.subplot(3,3,9)
+sns.boxplot(x = 'furnishingstatus', y = 'price', data = df1)
+# g.set_xticklabels(g.get_xticklabels(),rotation=45)
+plt.xticks(
+    rotation=45)
+
+plt.show()
+```
+
+
+
+We can see that there exists oultiers. Therefore create multiple dataframes for different factors that remove the oulier by only remain the prices that is within the range of upper quarter+1.5*IQR and lower quarter-1.5*IQR of the level of the selected factors. 
+
+```{python}
+# check boxplot for outlier
+def is_outlier(s):
+    Q1 = np.percentile(s, 25)
+    
+    Q3 = np.percentile(s, 75)
+    IQR = Q3 - Q1
+
+    upper=Q3+1.5*IQR
+
+    lower=Q1-1.5*IQR
+
+    return ~s.between(lower, upper)
+
+# len(df1[~df1.groupby('furnishingstatus', group_keys=False)['price'].apply(is_outlier)])
+```
+
+```{python}
+plt.figure(figsize=(11, 10))
+
+plt.subplot(3,3,1)
+sns.boxplot(x = 'bedrooms', y = 'price', data = df1[~df1.groupby('bedrooms', group_keys=False)['price'].apply(is_outlier)])
+
+plt.subplot(3,3,2)
+sns.boxplot(x = 'bathrooms', y = 'price', data = df1[~df1.groupby('bathrooms', group_keys=False)['price'].apply(is_outlier)])
+
+plt.subplot(3,3,3)
+sns.boxplot(x = 'stories', y = 'price', data = df1[~df1.groupby('stories', group_keys=False)['price'].apply(is_outlier)])
+
+plt.subplot(3,3,4)
+sns.boxplot(x = 'mainroad', y = 'price', data = df1[~df1.groupby('mainroad', group_keys=False)['price'].apply(is_outlier)])
+
+plt.subplot(3,3,5)
+sns.boxplot(x = 'guestroom', y = 'price', data = df1[~df1.groupby('guestroom', group_keys=False)['price'].apply(is_outlier)])
+
+plt.subplot(3,3,6)
+sns.boxplot(x = 'basement', y = 'price', data = df1[~df1.groupby('basement', group_keys=False)['price'].apply(is_outlier)])
+
+
+plt.subplot(3,3,7)
+sns.boxplot(x = 'airconditioning', y = 'price', data = df1[~df1.groupby('airconditioning', group_keys=False)['price'].apply(is_outlier)])
+
+plt.subplot(3,3,8)
+sns.boxplot(x = 'parking', y = 'price', data = df1[~df1.groupby('parking', group_keys=False)['price'].apply(is_outlier)])
+
+plt.subplot(3,3,9)
+sns.boxplot(x = 'furnishingstatus', y = 'price', data = df1[~df1.groupby('furnishingstatus', group_keys=False)['price'].apply(is_outlier)])
+plt.xticks(
+    rotation=45)
+
+plt.show()
+```
+
+Even though there still exists some outliers, the number of outliers reduce a lot, which means it's has a relatively good performance.
+
+The final graph will use those cleaned datasets to show the relationship between the housing price and the selected factors. The graph is in the Result Part in figure X.
+
+### Result 
+In this part, the figure below shows the relationship between the housing price and certain factors like house area, bedrooms, furnished, nearness to mainroad, etc. The scatter plot is applied to show the relationship between the housing price and the area. The bar plot is used to show the average housing price for different level of the selected factors (all the factors other than area).
+
+```{python}
+fig = go.Figure()
+
+# area
+fig.add_trace(
+    go.Scatter(
+    x=df1_area["area"],
+    y=df1_area["price"],
+    mode="markers",
+    visible=True)
+    )
+
+# bed room
+fig.add_trace(
+    go.Bar(
+    x=df1_bed["bedrooms"],
+    y=df1_bed["price"],
+    visible=False)
+    )
+
+# bathrooms
+fig.add_trace(
+    go.Bar(
+    x=df1_bath["bathrooms"],
+    y=df1_bath["price"],
+    visible=False)
+    )
+
+# stories
+fig.add_trace(
+    go.Bar(
+    x=df1_stories["stories"],
+    y=df1_stories["stories"],
+    visible=False)
+    )
+
+# mainroad
+fig.add_trace(
+    go.Bar(
+    x=df1_mainroad["mainroad"],
+    y=df1_mainroad["price"],
+    visible=False)
+    )
+
+# guestroom
+fig.add_trace(
+    go.Bar(
+    x=df1_guestroom["guestroom"],
+    y=df1_guestroom["price"],
+    visible=False)
+    )
+
+# basement
+fig.add_trace(
+    go.Bar(
+    x=df1_basement["basement"],
+    y=df1_basement["price"],
+    visible=False)
+    )
+
+# airconditioning
+fig.add_trace(
+    go.Bar(
+    x=df1_air["airconditioning"],
+    y=df1_air["price"],
+    visible=False)
+    )
+
+# parking
+fig.add_trace(
+    go.Bar(
+    x=df1_parking["parking"],
+    y=df1_parking["price"],
+    visible=False)
+    )
+
+# furnishingstatus
+fig.add_trace(
+    go.Bar(
+    x=df1_fur["furnishingstatus"],
+    y=df1_fur["price"],
+    visible=False)
+    )
+
+
+# create buttom
+buttons = []       # create a list for the buttons
+
+for i in range(1,len(df1.columns)):
+    visbility_list = [False] * (len(df1.columns)-1)
+    visbility_list[i-1] = True
+    buttons.append(
+        dict(label=list(df1.columns)[i],
+        method="update",
+        args=[{"visible": visbility_list},
+        {"title": list(df1.columns)[i],
+        "xaxis": {"title": list(df1.columns)[i],
+        "yaxis": "housing price"}}
+        ]
+        ))
+
+
+# update the figure layout
+fig.update_layout(
+    template="plotly_white",
+    xaxis_title="area",
+    yaxis_title="housing price",
+    title=go.layout.Title(
+        text ="area",
+        x=.1,
+        y=.98),
+)
+
+
+x1_loc = 0
+y1_loc = 1.2
+
+# DROPDOWN MENUS
+fig.update_layout(
+    # DEFINE A LIST OF THE VARIOUS BUTTONS (STORED AS DICTIONARIES)
+    updatemenus=[
+        # BUTTON-1: OPACITY
+        dict(
+            # NOTICE THAT THE OPTION ARE A LIST OF DICTIONARIES
+            # IMPORTANT: args specifies the key-value pairing for what to change
+            buttons=buttons,
+            # PLACEMENT AND META DATA FOR THE BUTTON
+            direction="down",
+            showactive=True,  # HIGHLIGHTS ACTIVE DROPDOWN ITEM OR ACTIVE BUTTON IF TRUE
+            pad={"r": 10, "t": 10},  # PADDING
+            x=x1_loc,  # POSITION
+            y=y1_loc,
+            xanchor="left",  # ANCHOR POINT
+            yanchor="top",
+        )
+    ]
+)
+
+
+fig.show()
+```
+
+
+From the graphs we can see that the housing price is almost positively correlated to all the factors. However, there are some factors that is not always positively correlated to the housing price. For the number of bedrooms, the average housing price is generally increasing as the number of bedrooms increases. But when the bedrooms is more than 4, the average housing price does not affected by the housing price. The average price of 4 and 5 is almost the same, and the price of 6 bedrooms is even getting lower. For basement, the average price of whether it has a basement or not does not have a huge difference. Therefore, it may not affect the housing price. For the number of parking, the average housing price with parking spaces is higher than no parking. However, there is no significant difference between the price of a house with two parking spaces and only one parking spaces, and the housing price of 3 parking spaces is even lower.
+
+Above all, the house with higher housing price has these features: larger area, more than 4 bedrooms, 4 bathrooms, have more stories, near to the mainroad, has a guestroom, has an airconditioning, has a parking space, and is furnished.
+
+
+```{python}
+df_house=df1.copy()
+
+varlist =  ['mainroad', 'guestroom', 'basement', 'airconditioning']
+
+# Defining the map function
+def binary_map(x):
+    return x.map({'yes': 1, "no": 0})
+
+# Applying the function to the housing list
+df_house[varlist] = df_house[varlist].apply(binary_map)
+
+def fur_map(x):
+    return x.map({'furnished': 0, "semi-furnished": 1, 'unfurnished': 2})
+
+df_house[["furnishingstatus"]]=df_house[["furnishingstatus"]].apply(fur_map)
+# df_house.head()
+```
+
+```{python}
+sns.heatmap(df_house.corr(), annot = True, cmap="YlGnBu")
+```
+
+
+The correlationship plot almost confirms the conclusion. The guestroom has a correlation that lower than 0.3, therefore, it will not be considered. 
+
+
+
+|Conditions | Requirements |
+|----|----|
+|Area | Larger |
+|Bedrooms  | $\geqslant$ 4   |
+|Bathrooms  | $\geqslant$ 4   |
+|MainRoad | Yes |
+|Guestroom | Yes |
+|Airconditioning | Yes |
+|Parkings | $\geqslant$ 2  | 
+|Furnishing Status | Furnished |
+
+
+
+## Annual Trends in Housing Prices by State in the US from 1975 to 2022
+
+### Method 
+
+Firstly, calculate the average house index from 1975 to 2022 in each state. Then plot the bar plot that shows the mean of the house price indexes in each state from 1975 to 2022, and then sort the states in descending order based on the value of the house index. Finally use the line plot to show the trend of the house price index from 1975 to 2022 in each State.
+
+### Result 
+
+```{python}
+df2=pd.read_csv("../data/HPI_AT_state.csv",header = None)
+df2.columns=['State','Year','Quarter','H_idx']
+# df2.head()
+```
+
+```{python}
+df2_year=df2[["State","Year","H_idx"]].groupby(["State","Year"]).mean().reset_index()
+# df2_year
+```
+
+```{python}
+# The bar plot 
+# make the bar can be selected, and selected based on the name od the appliances
+selection = alt.selection_single(fields=['State'],name='Random')
+color = alt.condition(selection,
+                      alt.value('steelblue'),         # the selected bar's color is steelblue
+                      alt.value('lightgray'))         # unselected bars is lightgray
+
+bar=(alt.Chart(df2_year)
+ .mark_bar()
+ .encode(y='mean(H_idx):Q',            # y is the value of the sum of the power
+         x=alt.X('State:N',            # x is the appliances, and each appliances is the sum of the power, 
+         sort=alt.EncodingSortField(field='H_idx', op='mean',     
+                            order='descending')),  # and they are in descending order according to the sum of the power
+         color=color
+    
+        )
+).add_selection(selection)           # the selection and the color are defined above
+
+# set for the title, xlabel, and ylabel.
+bar.title ="Mean of the House Price Indexes in each State in US from 1975 to 2022"
+bar.encoding.x.title = 'State'
+bar.encoding.y.title = 'Mean of the House Price Indexes'
+
+
+# The corresponding line plot for the selected appliances.
+color2 = alt.condition(selection,
+                      alt.Color('State:N', legend=None),                # The color is based on the selected appliance
+#                       alt.value('steelblue'),
+                      alt.value('lightgray'))             # unselected is dark gray
+
+line1=(alt.Chart(df2_year)
+ .mark_line()                                                     # line plot
+ .encode(x=alt.X('Year:O',axis=alt.Axis(labelAngle=-45)),          # x is the hour
+         y='mean(H_idx):Q',                                      # y is the sum of the power
+         color=color2,                                 # selection of the color is defined above
+         opacity=alt.condition(selection, alt.value(1.0), alt.value(0.1))
+    
+        )
+)
+
+# set the title, x label, and y label
+line1.title ="House Price Indexes in each State in US from 1975 to 2022"
+line1.encoding.x.title = 'Year'
+line1.encoding.y.title = 'House Price Indexes'
+
+# plot horizontally 
+bar & line1
+```
+
+
+The bar plot shows that the mean of the house price index of MA is the highest. It is because inflation, land costs, labor, and materials in MA. The mean of the house index in NY and DC is also pretty high. It is due to DC is the capital of the US and NY is the center of the US economy. The mean of the house price is the lowest in WV. That is because the population centers are relatively small, the tax base for services is lower in West Virginia than in other parts of the country. 
+
+The line plot clearly shows that for each state, the housing price index is in an increasing trend. But there is a short period of decreasing of house price index for most of states from 2007 to 2012, and then the house price index keeps increasing until now.
+
+
+
+## Population & Salary
+
+
+```{python}
+df3= df2_year.copy()
+df3_house=df3.loc[df3["Year"]==2022].reset_index(drop=True)
+df3_house["State_long"]=df3_house["State"]
+
+state_mapping = {
+    'AK': 'Alaska', 'AL': 'Alabama', 'AR': 'Arkansas', 'AZ': 'Arizona', 'CA': 'California',
+    'CO': 'Colorado', 'CT': 'Connecticut', 'DC': 'District of Columbia', 'DE': 'Delaware',
+    'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'IA': 'Iowa', 'ID': 'Idaho',
+    'IL': 'Illinois', 'IN': 'Indiana', 'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana',
+    'MA': 'Massachusetts', 'MD': 'Maryland', 'ME': 'Maine', 'MI': 'Michigan', 'MN': 'Minnesota',
+    'MO': 'Missouri', 'MS': 'Mississippi', 'MT': 'Montana', 'NC': 'North Carolina', 'ND': 'North Dakota',
+    'NE': 'Nebraska', 'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NV': 'Nevada',
+    'NY': 'New York', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania',
+    'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas',
+    'UT': 'Utah', 'VA': 'Virginia', 'VT': 'Vermont', 'WA': 'Washington', 'WI': 'Wisconsin',
+    'WV': 'West Virginia', 'WY': 'Wyoming'
+}
+
+df3_house["State_long"]=df3_house["State_long"].map(state_mapping)
+df3_house.rename(columns = {'H_idx':'Price_index'}, inplace = True)
+# df3_house.head()
+```
+
+
+```{python}
+df3_salary=pd.read_csv("../data/Salaries_2022.csv")
+df3_salary.columns=["State_long","Average_Salary","Median_Salary"]
+
+df3_population=pd.read_csv("../data/Population_2022.csv")
+df3_population.columns=["State_long","FIPS_Code","Population"]
+
+# df3_salary.head()
+# df3_population.head()
+```
+
+Merge to create a new dataset
+```{python}
+from functools import reduce
+df3_list=[df3_house,df3_population,df3_salary]
+df3_use = reduce(lambda  left,right: pd.merge(left,right,on=['State_long'],how='outer'), df3_list)
+df3_use['Population']=df3_use['Population'].str.replace('\W', '', regex=True)
+df3_use['Average_Salary']=df3_use['Average_Salary'].str.replace('\W', '', regex=True)
+df3_use['Median_Salary']=df3_use['Median_Salary'].str.replace('\W', '', regex=True)
+df3_use["Price_index"]=round(df3_use["Price_index"],2)
+
+df3_use['text1']= df3_use["State_long"]+ '<br>' + "Population: "+ df3_use["Population"].astype("str") + '<br>' + "Housing Price Index: "+ df3_use["Price_index"].astype("str")
+
+df3_use['text2']= df3_use["State_long"]+ '<br>' + "Average Salary: "+ df3_use["Population"].astype("str") + '<br>' + "Housing Price Index: "+ df3_use["Price_index"].astype("str")
+# df3_use.head()
+```
+
+
+```{python}
+fig = go.Figure(
+    data=go.Scattergeo(
+        locationmode = 'USA-states',
+        locations=df3_use['State'],
+        text = df3_use['text1'],
+        mode = 'markers',
+        marker = dict(
+            # size = np.log10(df3_use['Population'].astype("float")),   # log with base 10
+            # size = 1.2*(df3_use['Population'].astype("float")/10000)**(1/3),
+            size = (df3_use['Population'].astype("float")/100000)**(1/2), # set proper size
+            opacity = 0.8,
+            autocolorscale = False,
+            # symbol = 'square',
+            line = dict(
+                width=1,
+                color='rgba(102, 102, 102)'
+            ),
+            line_color='rgb(40,40,40)',
+            color = round(df3_use["Price_index"],2),
+            cmin = df3_use["Price_index"].min(),
+            cmax = df3_use["Price_index"].max(),
+            colorbar_title= "Housing Price Index"
+        )
+    )
+)  
+
+fig.update_layout(
+        title = 'Housing Price & Population in 2022<br>(Hover to see the information)',
+        geo = dict(
+            scope='usa',
+            projection_type='albers usa',
+            showland = True,
+            landcolor = "rgb(250, 250, 250)",
+            subunitcolor = "rgb(217, 217, 217)",
+            countrycolor = "rgb(217, 217, 217)",
+            countrywidth = 0.5,
+            subunitwidth = 0.5
+        )
+    )
+
+fig.show()
+```
+
+```{python}
+fig = go.Figure(
+    data=go.Scattergeo(
+        locationmode = 'USA-states',
+        locations=df3_use['State'],
+        text = df3_use['text2'],
+        mode = 'markers',
+        marker = dict(
+            # size = np.log10(df3_use['Population'].astype("float")),   # log with base 10
+            size = 0.5*((df3_use['Average_Salary'].astype("float")/10000)**(2)),  # set proper size
+            opacity = 0.8,
+            autocolorscale = False,
+            # symbol = 'square',
+            line = dict(
+                width=1,
+                color='rgba(102, 102, 102)'
+            ),
+            line_color='rgb(40,40,40)',
+            color = round(df3_use["Price_index"],2),
+            cmin = df3_use["Price_index"].min(),
+            cmax = df3_use["Price_index"].max(),
+            colorbar_title= "Housing Price Index"
+        )
+    )
+)  
+
+fig.update_layout(
+        title = 'Housing Price & Salaries in 2022<br>(Hover to see the information)',
+        geo = dict(
+            scope='usa',
+            projection_type='albers usa',
+            showland = True,
+            landcolor = "rgb(250, 250, 250)",
+            subunitcolor = "rgb(217, 217, 217)",
+            countrycolor = "rgb(217, 217, 217)",
+            countrywidth = 0.5,
+            subunitwidth = 0.5
+        )
+    )
+
+fig.show()
+```
+
+
+Housing price in a state are almost positively correlated with the salaries in that state.
+
+There appears to be a weak correlation between the housing price of a state and its population.
+
+
+
+## Try to display the data table for the whole project
+
+HTML_str 1 & 2
+```{python}
+import pandas as pd
+from IPython.core.display import HTML
+
+# Load the first dataset
+df1 = pd.read_csv("../data/final_report/cleaned_state.csv")
+num_pages1 = int(df1.shape[0] / 10) + 1
+
+# Load the second dataset
+df2 = pd.read_csv("../data/final_report/Housing.csv")
+num_pages2 = int(df2.shape[0] / 10) + 1
+
+# Load the third dataset
+df3 = pd.read_csv("../data/final_report/crime_rate.csv")
+num_pages3 = int(df3.shape[0] / 10) + 1
+
+# Load the fourth dataset
+df4 = pd.read_csv("../data/final_report/combined.csv")
+num_pages4 = int(df4.shape[0] / 10) + 1
+
+# Generate HTML for the first data table
+html_str1 = f'''
+<h3>Table 1: Housing Index by State for Different Quarters of the Year</h3>
+<div id="table-container1"></div>
+
+<script>
+  var df1 = {df1.to_json(orient='records')};
+  var page_size1 = 10;
+  var current_page1 = 1;
+
+  function show_table1() {{
+    var start1 = (current_page1 - 1) * page_size1;
+    var end1 = start1 + page_size1;
+    var table_html1 = '<table><tr><th>' + Object.keys(df1[0]).join('</th><th>') + '</th></tr>';
+    for (var i = start1; i < end1; i++) {{
+      if (i >= df1.length) break;
+      var row_html1 = '<tr><td>' + Object.values(df1[i]).join('</td><td>') + '</td></tr>';
+      table_html1 += row_html1;
+    }}
+    table_html1 += '</table>';
+    document.getElementById('table-container1').innerHTML = table_html1;
+  }}
+
+  function prev_page1() {{
+    if (current_page1 > 1) {{
+      current_page1--;
+      show_table1();
+    }}
+  }}
+
+  function next_page1() {{
+    if (current_page1 < {num_pages1}) {{
+      current_page1++;
+      show_table1();
+    }}
+  }}
+
+  show_table1();
+</script>
+
+<button onclick="prev_page1()">Previous Page</button>
+<button onclick="next_page1()">Next Page</button>
+'''
+
+# Generate HTML for the second data table
+html_str2 = f'''
+<h3>Table 2: Intrinsic Factors for Higher Housing Price</h3>
+<div id="table-container2"></div>
+
+<script>
+  var df2 = {df2.to_json(orient='records')};
+  var page_size2 = 10;
+  var current_page2 = 1;
+
+  function show_table2() {{
+    var start2 = (current_page2 - 1) * page_size2;
+    var end2 = start2 + page_size2;
+    var table_html2 = '<table><tr><th>' + Object.keys(df2[0]).join('</th><th>') + '</th></tr>';
+    for (var i = start2; i < end2; i++) {{
+      if (i >= df2.length) break;
+      var row_html2 = '<tr><td>' + Object.values(df2[i]).join('</td><td>') + '</td></tr>';
+      table_html2 += row_html2;
+    }}
+    table_html2 += '</table>';
+    document.getElementById('table-container2').innerHTML = table_html2;
+  }}
+function prev_page2() {{
+if (current_page2 > 1) {{
+current_page2--;
+show_table2();
+}}
+}}
+
+function next_page2() {{
+if (current_page2 < {num_pages2}) {{
+current_page2++;
+show_table2();
+}}
+}}
+
+show_table2();
+</script>
+
+<button onclick="prev_page2()">Previous Page</button>
+<button onclick="next_page2()">Next Page</button>
+'''
+```
+
+HTML_str 3 & 4
+```{python}
+# Table 3
+html_str3 = f'''
+
+<h3>Table 3: Crime Data</h3>
+<div id="table-container3"></div>
+<script>
+  var df3 = {df3.to_json(orient='records')};
+  var page_size3 = 10;
+  var current_page3 = 1;
+
+  function show_table3() {{
+    var start3 = (current_page3 - 1) * page_size3;
+    var end3 = start3 + page_size3;
+    var table_html3 = '<table><tr><th>' + Object.keys(df3[0]).join('</th><th>') + '</th></tr>';
+    for (var i = start3; i < end3; i++) {{
+      if (i >= df3.length) break;
+      var row_html3 = '<tr><td>' + Object.values(df3[i]).join('</td><td>') + '</td></tr>';
+      table_html3 += row_html3;
+    }}
+    table_html3 += '</table>';
+    document.getElementById('table-container3').innerHTML = table_html3;
+  }}
+
+  function prev_page3() {{
+    if (current_page3 > 1) {{
+      current_page3--;
+      show_table3();
+    }}
+  }}
+
+  function next_page3() {{
+    if (current_page3 < {num_pages3}) {{
+      current_page3++;
+      show_table3();
+    }}
+  }}
+
+  show_table3();
+</script>
+<button onclick="prev_page3()">Previous Page</button>
+<button onclick="next_page3()">Next Page</button>
+'''
+
+# Table 4
+html_str4 = f'''
+
+<h3>Table 4: Housing Price Index with Population and Salaries in 2022</h3>
+<div id="table-container4"></div>
+<script>
+  var df4 = {df4.to_json(orient='records')};
+  var page_size4 = 10;
+  var current_page4 = 1;
+
+  function show_table4() {{
+    var start4 = (current_page4 - 1) * page_size4;
+    var end4 = start4 + page_size4;
+    var table_html4 = '<table><tr><th>' + Object.keys(df4[0]).join('</th><th>') + '</th></tr>';
+    for (var i = start4; i < end4; i++) {{
+      if (i >= df4.length) break;
+      var row_html4 = '<tr><td>' + Object.values(df4[i]).join('</td><td>') + '</td></tr>';
+      table_html4 += row_html4;
+    }}
+    table_html4 += '</table>';
+    document.getElementById('table-container4').innerHTML = table_html4;
+  }}
+
+  function prev_page4() {{
+    if (current_page4 > 1) {{
+      current_page4--;
+      show_table4();
+    }}
+  }}
+
+function next_page4() {{
+if (current_page4 < {num_pages4}) {{
+current_page4++;
+show_table4();
+}}
+}}
+
+show_table4();
+</script>
+
+<button onclick="prev_page4()">Previous Page</button>
+<button onclick="next_page4()">Next Page</button>
+'''
+```
+
+Final Display the table
+```{python}
+final_html_str = f'''
+
+<html>
+<head>
+  <style>
+    table {{
+      border-collapse: collapse;
+      width: 100%;
+    }}
+    th, td {{
+      text-align: left;
+      padding: 8px;
+    }}
+    th {{
+      background-color: #ddd;
+    }}
+    tr:nth-child(even) {{
+      background-color: #f2f2f2;
+    }}
+    .page-buttons {{
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }}
+  </style>
+</head>
+<body>
+{html_str1}
+{html_str2}
+{html_str3}
+{html_str4}
+</body>
+</html>
+'''
+
+display(HTML(final_html_str))
+```
+
+
+```{python}
+
+```
+
